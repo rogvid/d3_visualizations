@@ -1,0 +1,2 @@
+# D3 Hobby Projects
+In this repository you'll find all of the D3 visualizations that I chose to publish on git and gist. Most of the visualizations have been made during the course of my data visualization course at udacity, and since this is my first encounter with D3, and my first real encounter with the javascript syntax, there will hopefully be big improvements from one visualization to the other. All of the code in this repository is published under the GNU General Public License.

@@ -1,0 +1,2 @@
+This visualization shows how one could represent Apple's US marketshare instead of using a 3D pie chart, see here for reference [3D Pie Chart of DOOM](https://www.engadget.com/2008/01/15/live-from-macworld-2008-steve-jobs-keynote/).
+The horizontal bar chart clearly shows the differences between competitors. Since I imagined how this visualization could've been used in the presentation instead of the 3D pie chart, I highlighted the Apple bar, which nicely brings it into focus, since all the other bars are mono colored. 
