@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title></title>
+  <style type="text/css" media="screen">
+  div {
+    width:420px;
+    height: 100%;
+    float: left;
+    margin: 1px;
+    margin-bottom: 10px;
+    line-height: 150%;
+  }
+  .week {
+      stroke-width: "2px";
+  }
+  .hidden {
+      display: none;
+  }
+
+  img {
+      width: 100%;
+      max-height: 450px;
+  }
+  </style>
+<html>
+    <head>
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+        <script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
+    </head>
+    <body>
+    </body>
+    <script>
+        var body = d3.select("body"),
+            colors = 11,
+            weeks = 52,
+            years = 100,
+            birth_year = 1988,
+            color = d3.scaleLinear().domain([colors, 1])
+                        .interpolate(d3.interpolateHsl)
+                        .range([d3.rgb("#50FF00"), d3.rgb('#FF0000')]),
+            date_of_birth = new Date(1988, 6, 26);;
+
+        var data = [];
+        var year_week_parser = d3.timeParse("%Y-%W");
+        var year_week_format = d3.timeFormat("%Y-%W");
+        var week_format = d3.timeFormat("%W");
+        var zero_padder = d3.format("02.0f")
+        var formatter = d3.format("");
+        var date_to_index = d3.scaleLinear().rangeRound([0, weeks * years]).domain([new Date(1988, 0, 1), new Date(2087, 11, 31)]);
+
+        for(var year=birth_year; year<=birth_year + years; year++)
+        {
+            for(var week=1; week<=weeks; week++){
+                var elem;
+                var d = year_week_parser(formatter(year) + "-" + formatter(week));
+                if(week<=1){
+                    elem = {year: +year, week: 1, fill: d <= date_of_birth ? "white" : d <= new Date ? "lightgrey" : "darkgrey", current: year_week_format(d) == year_week_format(new Date) ? true : false }
+                }
+                else{
+                    elem = {year: +year, week: +week, fill: d <= date_of_birth ? "white" : d <= new Date ? "lightgrey" : "darkgrey", current: year_week_format(d) == year_week_format(new Date) ? true : false }
+                }
+                data.push(elem);
+            }
+        }
+
+
+        var margin = {top: 20, right: 500, bottom: 30, left: 80},
+            width = 1300 - margin.left - margin.right,
+            height = 1600 - margin.top - margin.bottom,
+            alpha = 0.5,
+            padding = 0.02,
+            last_clicked,
+            rect_width = width / weeks - 2 * padding * weeks,
+            rect_height = height / years - 2 * padding * years;
+
+        var svg = d3.select("body").append("svg")
+                    .attr("width", width + margin.left + margin.right)
+                    .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                    .attr("transform", 
+                          "translate(" + margin.left + "," + margin.top + ")");
+
+        var x = d3.scaleLinear().range([0, width]).domain([1, 52]),
+            y = d3.scaleLinear().range([0, height]).domain([birth_year, birth_year + years]);
+
+        svg.append("g")
+            .attr("transform", 
+                  "translate(" + margin.left + "," + margin.top + ")");
+
+        
+        d3.json("data.json", function(error, events){
+            if (error) throw error;
+            
+            // Update the data array with events from the events file
+            events.forEach(function(d, i){
+                var idx = date_to_index(new Date(d.year, d.month - 1, d.day));
+                var elem = data[idx]
+                var awesomeness = [];
+                var event;
+                if(elem.awesomeness){
+                    elem.awesomeness.push(d.awesomeness);
+                }
+                else{
+                    elem['awesomeness'] = [d.awesomeness];
+                }
+                d.awesomeness = elem.awesomeness;
+                event = "Week: " + week_format(new Date(d.year, d.month - 1, d.day)) + " (" + d.year + "-" + zero_padder(d.month) + "-" + zero_padder(d.day) + ")$ " + d['event'];
+                if(elem.event){
+                    elem.event.push(event);
+                }
+                else{
+                    elem['event'] = [event];
+                }
+                d.event = elem.event;
+                // console.log(d3.mean(awesomeness));
+                // console.log(color(d3.mean(awesomeness)));
+                // console.log(d);
+                // console.log(elem);
+                data[idx] = Object.assign(elem, d);
+            })
+
+            // Plot rectangles
+            var bar = svg.selectAll(".week")
+                .data(data)
+                .enter()
+                .append("g");
+            
+            var rect = bar.append("rect")
+                    //.attr("x", function(d){ return x(d.value); })
+                    .attr("x", function(d){ return x(d.week); })
+                    .attr("width", rect_width)
+                    .attr("y", function(d){ return y(d.year - 0.4); })
+                    .attr("height", rect_height)
+                    .attr("fill", function(d){ return d.current ? "black" : d.awesomeness ? color(d3.mean(d.awesomeness)) :  d.fill})
+                    .attr("opacity", alpha)
+                    .on('mouseover', hover_in)
+                    .on('mouseout', hover_out)
+                    .on("click", displayWeekEvents);
+
+            svg.append("g")
+                .call(d3.axisLeft(y).ticks(20).tickFormat(d3.format("")));
+
+        })
+
+        function hover_out(d) {
+                            d3.select(this).transition().delay(1000).duration(200).attr("opacity", alpha);
+                        }
+
+
+        function hover_in(d){
+                            d.color = color(d.name);
+                            d3.select(this).attr("opacity", 1.0);
+                            d3.select(this).transition()
+                                .duration(1000)
+                                .attrTween("transform", function() { return d3.interpolateString("rotate(0," + (x(d.week) + rect_width / 2.0) + "," + (y(d.year - 0.4) + rect_height / 2) + ")",
+                                                                                                 "rotate(360," + (x(d.week) + rect_width / 2.0) + "," + (y(d.year - 0.4) + rect_height / 2) + ")"); })
+        }
+
+
+        function displayWeekEvents(d){
+            if (typeof last_clicked === 'undefined') {
+                console.log("No week has been clicked");
+            }
+            else{
+                d3.selectAll("foreignObject").remove();
+                // Move the last clicked rect back to it's position
+                d3.select(".is_clicked").transition().delay(0).duration(0);
+                //d3.select(".is_clicked").transition().duration(1000).attr("transform", "translate(" + -(width - x(last_clicked.week) + 10) + "," + (+y(last_clicked.year)) + ")");
+                d3.select(".is_clicked").transition().delay(0).duration(1000).attr("width", rect_width).attr("height", rect_height).attr("fill", function(d){ return d.current ? "black" : d.awesomeness ? color(d3.mean(d.awesomeness)) :  d.fill});
+                d3.select(".is_clicked").transition().delay(1000).duration(1000).attr("transform", "translate(0, 0)");
+                d3.select(".is_clicked").attr("x", x(last_clicked.week));
+                d3.select(".is_clicked").attr("y", y(last_clicked.year - 0.4));
+                d3.select(".is_clicked").on("mouseover", hover_in);
+                d3.select(".is_clicked").on("mouseout", hover_out);
+                d3.select(".is_clicked").on("click", displayWeekEvents);
+                d3.select(".is_clicked").attr("opacity", 0.5)
+                d3.select(".is_clicked").attr("class", "");
+            }
+            
+            // Move the rect to the right to display a weekly event box
+            d3.select(this).transition().delay(0).duration(0);
+            d3.select(this).attr("x", x(d.week));
+            d3.select(this).attr("y", y(d.year - 0.4));
+            d3.select(this).on("mouseover", null);
+            d3.select(this).on("mouseout", null)
+            d3.select(this).on("click", null)
+            d3.select(this).transition().duration(1000).attr("transform", "translate(" + (width - x(d.week) + 40) + "," + (-y(d.year)) + ")");
+            d3.select(this).transition().delay(1000).duration(1000).attr("height", height).attr("width", margin.right - 20).attr("fill", "#f2f2f2");
+            d3.select(this).attr("class", "is_clicked");
+
+            // Add all the text from the events
+            if(d.event){
+                d3.select(".is_clicked").each(function(){
+                    var text = d3.select(this.parentNode)
+                                 .append("foreignObject")
+                                 .attr("dy", "0.35em")
+                                 .attr("x", width + 50)
+                                 .attr("y", y(birth_year - 0.4) + 20)
+                });
+                add_event_text(d);
+            }
+
+            last_clicked = d;
+        }
+
+        function add_event_text(d){
+            d.event.forEach(function(e, i){
+                d3.select("foreignObject").append("xhtml:body").html("<div class='hidden'>" + e + "</div>");
+            });
+            d3.selectAll(".hidden").transition().delay(2000).duration(1000).attr("class", "");
+        }
+
+    </script>
+</html>
