@@ -32,13 +32,13 @@
     </body>
     <script>
         var body = d3.select("body"),
-            colors = 11,
+            colors = 5,
             weeks = 52,
             years = 100,
             birth_year = 1988,
             color = d3.scaleLinear().domain([colors, 1])
                         .interpolate(d3.interpolateHsl)
-                        .range([d3.rgb("#50FF00"), d3.rgb('#FF0000')]),
+                        .range([d3.rgb("#10FF00"), d3.rgb('#FF0000')]),
             date_of_birth = new Date(1988, 6, 26);;
 
         var data = [];
@@ -47,7 +47,7 @@
         var week_format = d3.timeFormat("%W");
         var zero_padder = d3.format("02.0f")
         var formatter = d3.format("");
-        var date_to_index = d3.scaleLinear().rangeRound([0, weeks * years]).domain([new Date(1988, 0, 1), new Date(2087, 11, 31)]);
+        var date_to_index = d3.scaleLinear().rangeRound([0, weeks * years]).domain([new Date(1988, 0, 1), new Date(2088, 00, 1)]);
 
         for(var year=birth_year; year<=birth_year + years; year++)
         {
@@ -55,10 +55,10 @@
                 var elem;
                 var d = year_week_parser(formatter(year) + "-" + formatter(week));
                 if(week<=1){
-                    elem = {year: +year, week: 1, fill: d <= date_of_birth ? "white" : d <= new Date ? "lightgrey" : "darkgrey", current: year_week_format(d) == year_week_format(new Date) ? true : false }
+                    elem = {year: +year, week: 1, fill: d <= date_of_birth ? "white" : d <= new Date ? "lightgrey" : "darkgrey" }
                 }
                 else{
-                    elem = {year: +year, week: +week, fill: d <= date_of_birth ? "white" : d <= new Date ? "lightgrey" : "darkgrey", current: year_week_format(d) == year_week_format(new Date) ? true : false }
+                    elem = {year: +year, week: +week, fill: d <= date_of_birth ? "white" : d <= new Date ? "lightgrey" : "darkgrey" }
                 }
                 data.push(elem);
             }
@@ -69,7 +69,7 @@
             width = 1300 - margin.left - margin.right,
             height = 1600 - margin.top - margin.bottom,
             alpha = 0.5,
-            padding = 0.02,
+            padding = 0.020,
             last_clicked,
             rect_width = width / weeks - 2 * padding * weeks,
             rect_height = height / years - 2 * padding * years;
@@ -132,7 +132,7 @@
                     .attr("width", rect_width)
                     .attr("y", function(d){ return y(d.year - 0.4); })
                     .attr("height", rect_height)
-                    .attr("fill", function(d){ return d.current ? "black" : d.awesomeness ? color(d3.mean(d.awesomeness)) :  d.fill})
+                    .attr("fill", function(d){ return d.awesomeness ? color(d3.mean(d.awesomeness)) :  d.fill})
                     .attr("opacity", alpha)
                     .on('mouseover', hover_in)
                     .on('mouseout', hover_out)
@@ -167,14 +167,14 @@
                 // Move the last clicked rect back to it's position
                 d3.select(".is_clicked").transition().delay(0).duration(0);
                 //d3.select(".is_clicked").transition().duration(1000).attr("transform", "translate(" + -(width - x(last_clicked.week) + 10) + "," + (+y(last_clicked.year)) + ")");
-                d3.select(".is_clicked").transition().delay(0).duration(1000).attr("width", rect_width).attr("height", rect_height).attr("fill", function(d){ return d.current ? "black" : d.awesomeness ? color(d3.mean(d.awesomeness)) :  d.fill});
+                d3.select(".is_clicked").transition().delay(0).duration(1000).attr("width", rect_width).attr("height", rect_height).attr("fill", function(d){ return d.awesomeness ? color(d3.mean(d.awesomeness)) :  d.fill});
                 d3.select(".is_clicked").transition().delay(1000).duration(1000).attr("transform", "translate(0, 0)");
                 d3.select(".is_clicked").attr("x", x(last_clicked.week));
                 d3.select(".is_clicked").attr("y", y(last_clicked.year - 0.4));
                 d3.select(".is_clicked").on("mouseover", hover_in);
                 d3.select(".is_clicked").on("mouseout", hover_out);
                 d3.select(".is_clicked").on("click", displayWeekEvents);
-                d3.select(".is_clicked").attr("opacity", 0.5)
+                d3.select(".is_clicked").attr("opacity", alpha)
                 d3.select(".is_clicked").attr("class", "");
             }
             
@@ -186,7 +186,7 @@
             d3.select(this).on("mouseout", null)
             d3.select(this).on("click", null)
             d3.select(this).transition().duration(1000).attr("transform", "translate(" + (width - x(d.week) + 40) + "," + (-y(d.year)) + ")");
-            d3.select(this).transition().delay(1000).duration(1000).attr("height", height).attr("width", margin.right - 20).attr("fill", "#f2f2f2");
+            d3.select(this).transition().delay(1000).duration(1000).attr("height", height).attr("width", margin.right - 20).attr("opacity", 0.1); //.attr("fill", "#f2f2f2");
             d3.select(this).attr("class", "is_clicked");
 
             // Add all the text from the events
