@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title></title>
+  <style type="text/css" media="screen">
+  div {
+    width:420px;
+    height: 100%;
+    float: left;
+    margin: 1px;
+    margin-bottom: 10px;
+    line-height: 150%;
+  }
+  .week {
+      stroke-width: "2px";
+  }
+  .hidden {
+      display: none;
+  }
+
+  img {
+      width: 100%;
+      max-height: 450px;
+  }
+  </style>
+<html>
+    <head>
+        <script src="https://d3js.org/d3.v4.min.js"></script>
+        <script src="https://d3js.org/d3-interpolate.v1.min.js"></script>
+    </head>
+    <body>
+        <svg width="960px" height="500px">
+    </body>
+    <script>
+
+        d3.json("family.json", function(error, graph){
+            if (error) throw error;
+
+            t = d3.transition().duration(300);
+
+            graph.forEach(function(d){
+                d.level = +d.level;
+                d.connection = +d.connection;
+            })
+
+            var selection = d3.select("svg")
+                              .selectAll("circle")
+                              .data(graph);
+            
+            // Update
+            selection.
+
+            // Remove
+
+            // Enter
+            
+        })
+
+    </script>
+</html> 

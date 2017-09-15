@@ -23,10 +23,10 @@
         }
         #map {
             /*min-height: 600px;*/
-/*            width: 800px;
-            height: 590px;*/
             width: 600px;
             height: 590px;
+/*            width: 860px;
+            height: 500px;*/
             float: left;
         }
 
@@ -44,8 +44,13 @@
         }
 
         #district_rank {
-            /*min-height: 600px;*/
+/*            min-height: 600px;*/
             float: left;
+/*            display: none;*/
+        }
+
+        #avg_price_development {
+/*            display: none;*/
         }
 
         .district {
@@ -66,17 +71,17 @@
         #year_buttons {
             float: left;
             margin: 0 0 2px;
-            width: 70px;
+            width: 65px;
         }
 
         .year_button {
             float: left;
-            margin: 0px 2px 2.8px;
-            font: 12px/14px Arial, Helvetica, sans-serif;
+            margin: 0px 2px 3.3px;
+            font: 10px/12px Arial, Helvetica, sans-serif;
             background: white;
             background: rgba(255, 255, 255, 0.8);
             box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-            padding: 3px 4px;
+            padding: 2px 4px;
             border-radius: 5px;
             cursor: pointer;
         }
@@ -113,30 +118,37 @@
         }
     </style>
 </head>
-<link rel="stylesheet" href="leaflet.css">
-<script src="leaflet.js"></script>
+<link rel="stylesheet" href="leaflet.css"/>
 <html>
 <div id="year_buttons"></div>
 <div id="map"></div>
+<!-- 
+    Because of limitations of bl.ocks I chose to hide the following divs with display=none. 
+    If you want to see the full visualization just uncomment those and set the width of the #map to the width and height that is commented out
+-->
 <div id="district_rank">
     <svg width="600" height="350"></svg>
 </div>
 <div id="avg_price_development">
     <svg width="600" height="240"></svg>
 </div>
-
 </html>
-<script src="jquery.min.js"></script>
-<script src="leaflet-heat.js"></script>
-<script src="d3.v4.min.js"></script>
+<!-- Load all javascript libraries needed -->
+<script src="leaflet.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="d3-scale-chromatic.v0.3.min.js"></script>
 <script>
+    // The following lines are only used if #district_rank and #avg_price_development are not hidden
     var margin = {top: 20, right: 20, bottom: 150, left: 70},
         width = +d3.select("#district_rank svg").attr("width") - margin.left - margin.right,
         height = +d3.select("#district_rank svg").attr("height") - margin.top - margin.bottom;
 
+    // The following lines are only used if #district_rank and #avg_price_development are not hidden
     var years = Array.from(new Array(26), (x,i) => i + 1992);
 
+    // The following lines are only used if #district_rank and #avg_price_development are not hidden
+    /* Create functions needed for transformation and summation of data */
     var add = (x,y) => x + y;
     var sum = xs => xs.reduce(add, 0);
     var avg = xs => xs.reduce(add, 0) / xs.length;
@@ -151,6 +163,21 @@
         return xs === undefined ? [] : aux(xs)
         }
 
+
+    // Add map and tiles from leaflet
+    var map = L.map('map').setView([55.73, 12.47], 10);
+
+    // var url = 'https://maps.wikimedia.org/osm-intl/{z}/{x}/{y}.png'
+    var url = 'http://a.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png'
+    var attribution = "Map tiles by Carto, under CC BY 3.0. Data by OpenStreetMap, under ODbL."
+
+    // var tiles = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+    //     attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
+    var tiles = L.tileLayer(url, {
+        attribution: attribution,
+    }).addTo(map);
+
+    // Add buttons to illustrate which year the visualization is displaying
     d3.select("#year_buttons")
         .selectAll("div")
         .data(years)
@@ -161,26 +188,14 @@
             .text(function(d){ return d == 2017 ? 'Average' : d; })
             .on("click", function(d){ update(d) });
 
-    // don't forget to include leaflet-heatmap.js
-    var map = L.map('map').setView([55.73, 12.47], 10);
-
-    /*var tiles = L.tileLayer('http://{s}.tile.stamen.com/toner/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(map);*/
-    var tiles = L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(map);
-    /*var tiles = L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors',
-    }).addTo(map);*/
-
-    // var price_intervals = [0.0, 400000.0, 800000.0, 1200000.0, 1600000.0, 2000000.0, 2500000.0, 3000000.0, 4000000.0];
-    var price_intervals = Array.from(new Array(12), (x,i) => i * 400000) ;
+    // Add price intervals for the legend as well as the coloring of different price levels
+    var price_intervals = Array.from(new Array(8), (x,i) => i * 500000) ;
     var colorscale = d3.interpolatePlasma;
     var color = d3.scaleSequential(colorscale).domain(d3.extent(price_intervals, function (d) { return d; }));
     var year_color = d3.scaleSequential(colorscale).domain(d3.extent(price_intervals, function(d){ return d; }));
     var year = 1992;
 
+    // Add an info box which displays district statistics when a district is hovered
     var info = L.control();
 
     info.onAdd = function (map) {
@@ -194,7 +209,7 @@
         this._div.innerHTML = '<h4>Copenhagen Sales Statistics</h4>' + (props ?
             '<b>' + props.POSTNR_TXT + ' ' + props.POSTBYNAVN + '</b><br />'
             + "Appartments sold: " + props.n_sales_info[year].toFixed(0) + '<br />'
-            + "Average price: " + (props.avg_sales[year] / 1000000.0).toFixed(3) + " mil kr<br />"
+            + "Average price: " + (props.avg_sales[year] / 1000000.0).toFixed(3) + " mio kr<br />"
             : 'Hover over a postal district');
     };
 
@@ -212,7 +227,7 @@
         for (var i = 0; i < price_intervals.length; i++) {
             div.innerHTML +=
                 '<i style="background:' + color(price_intervals[i] + 1) + '"></i> ' +
-                (price_intervals[i] / 1000000.0).toFixed(2) + (price_intervals[i + 1] ? '&ndash;' + (price_intervals[i + 1] / 1000000.0).toFixed(2) + " mil." + '<br>' : '+ mil.');
+                (price_intervals[i] / 1000000.0).toFixed(2) + (price_intervals[i + 1] ? '&ndash;' + (price_intervals[i + 1] / 1000000.0).toFixed(2) + " mio." + '<br>' : '+ mio.');
         }
 
         return div;
@@ -220,19 +235,14 @@
 
     legend.addTo(map);
 
-    var update_sales_year = function(y){
-        var text = "Copenhagen Sales In " + y > 2016 ? "1992 - 2016" : y;
-        console.log(text);
-    }
-
-
+    // Add an svg to the leaflet map, so that paths can be drawn on top of it
     var svg = d3.select(map.getPanes().overlayPane).append("svg"),
         g = svg.append("g").attr("class", "leaflet-zoom-hide");
 
+    // Add a variable to hold geojson data
     var map_data;
 
-/*    var x = d3.scaleLinear().range([0, width]);
-    var y = d3.scaleBand().range([height, 0]);*/
+
     var x = d3.scaleBand().range([0, width]).padding(0.1);
     var t = d3.scaleLinear().range([0, width]).domain([1992, 2016]);
     var y = d3.scaleLinear().range([height, 0]);
@@ -248,7 +258,7 @@
         data.features.sort(function(a, b){ return +a.properties.avg_sales['1992'] - +b.properties.avg_sales['1992'];});
 
         debugger;
-        var total_price = transpose(data.features.map(function(d) { return d3.zip(d3.keys(d.properties.total_sales), d3.values(d.properties.total_sales)).map(function(d){ return +d[1]; });  })).map(avg);
+        var total_price = transpose(data.features.map(function(d) { return d3.zip(d3.keys(d.properties.total_sales), d3.values(d.properties.total_sales), d3.values(d.properties.n_sales_info)).map(function(d){ return +d[2] !== 0 ? +d[1]/+d[2] : +d[1]; });  })).map(avg);
         total_price = d3.zip(years, total_price).map(function(d){ return {year: d[0], value: d[1]};});
 
         // Start by drawing the map, then draw the ranks
@@ -291,7 +301,6 @@
             paths.attr("d", path);
         }
 
-        update_sales_year(1992);
 
         function projectPoint(x, y) {
             var point = map.latLngToLayerPoint(new L.LatLng(y, x));
@@ -369,11 +378,11 @@
         d3.select(".y")
             //.call(d3.axisBottom(x).ticks(5).tickFormat(function(d) { return parseInt(d / 1000.0); }).tickSizeInner([-height]));
             .call(d3.axisLeft(y).ticks(3).tickFormat(d3.format(",.0f")).tickSizeInner([-width]));
-        update_sales_year(current_year);
         d3.select("#year-" + current_year).classed("active", true);
     }
 
     var mouseover = function (d) {
+        debugger;
         district = d3.select(this);
         district.attr("stroke-width", 3)
             .attr("fill-opacity", 1.0)
@@ -393,7 +402,8 @@
         update(year)
         if (year >= 2017) {
             clearInterval(interval);
-        }
+            /* Add buttons to the visualization, to make interaction possible */
+                }
     }, 1000)
 
 </script>
